@@ -79,20 +79,19 @@ def crop_board_image(
     v_end = vert_indices[-1] + grid_square_length
     h_start = horiz_indices[0] - grid_square_length + 1
     h_end = horiz_indices[-1] + grid_square_length
-    return img[:, h_start:h_end, v_start:v_end, :]
+    return board_img[:, h_start:h_end, v_start:v_end, :]
 
 
-def main():
-    input_img = Image.open("img/board0.png")
-
+def get_cropped_board_image(input_path: str) -> Image:
+    input_img = Image.open(input_path)
     img = preprocess_image(input_img)
-
     # Identify gridline indices
     vert_indices, horiz_indices = get_grid_indices(img)
-
     # Determine length of grid square sides
     grid_square_length = vert_indices[2] - vert_indices[0]
+    cropped_img = crop_board_image(img, grid_square_length, vert_indices, horiz_indices)
+    return Image.fromarray(cropped_img[0, :, :, 0].numpy())
 
 
 if __name__ == "__main__":
-    main()
+    cropped_image = get_cropped_board_image("img/board0.png")
