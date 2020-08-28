@@ -1,9 +1,29 @@
 from copy import deepcopy
+from typing import List
+from typing import Optional
 from typing import Tuple
 
 from PIL import Image
 import numpy as np
 import tensorflow as tf
+
+
+# Chessboard squares must be at least 16 pixels in length
+MIN_SQUARE_LENGTH = 16
+
+
+def preprocess_image(input_img: Image) -> tf.Tensor:
+    """Preprocess the input image.
+    """
+    img = deepcopy(input_img)
+    # Convert to grayscale
+    img = img.convert(mode="L")
+    # Convert to array
+    img = np.array(img)
+    # Convert to 4-D
+    img = np.reshape(img, (1, *img.shape, 1))
+    # Convert to tensor
+    return tf.constant(img, dtype=tf.float32)
 
 
 def get_board_filters() -> tf.Tensor:
@@ -22,19 +42,9 @@ def get_board_filters() -> tf.Tensor:
     return tf.constant(kernel, dtype=tf.float32)
 
 
-def preprocess_image(input_img: Image) -> tf.Tensor:
-    img = deepcopy(input_img)
-    # Convert to grayscale
-    img = img.convert(mode="L")
-    # Convert to array
-    img = np.array(img)
-    # Convert to 4-D
-    img = np.reshape(img, (1, *img.shape, 1))
-    # Convert to tensor
-    return tf.constant(img, dtype=tf.float32)
-
-
-def get_grid_indices(img: tf.Tensor) -> Tuple[np.array, np.array]:
+def detect_grid_indices(img: tf.Tensor) -> Tuple[np.array, np.array]:
+    """Detects image indices of chessboard gridlines.
+    """
     kernel = get_board_filters()
 
     # Apply convolution
@@ -49,48 +59,68 @@ def get_grid_indices(img: tf.Tensor) -> Tuple[np.array, np.array]:
     # Get indices of vertical and horizontal edges
     v_mean = tf.math.reduce_mean(filtered_img, axis=0)
     h_mean = tf.math.reduce_mean(filtered_img, axis=1)
-    # Use 80% of maximum pixel value as threshold
-    # NOTE: this threshold could be a problem if the "light" grid squares are too dark
+    # Use 75% of maximum pixel value as threshold
     v_indices = tf.where(v_mean > (255 / 1.25))
     h_indices = tf.where(h_mean > (255 / 1.25))
-    # Trim boundaries
-    # NOTE: this may not work if image contains extra information outside board
-    v_indices = v_indices[1:-1]
-    h_indices = h_indices[1:-1]
     # Convert to 1-D numpy arrays
     v_indices = tf.squeeze(v_indices, axis=-1).numpy()
     h_indices = tf.squeeze(h_indices, axis=-1).numpy()
 
-    # Verify number of grid lines
-    if len(v_indices) != 14 or len(h_indices) != 14:
-        raise ValueError("Detected an unexpected number of chessboard grid lines.")
-
-    return v_indices, h_indices
+    return filter_grid_indices(v_indices), filter_grid_indices(h_indices)
 
 
-def crop_board_image(
-    board_img: tf.Tensor,
-    grid_square_length: int,
-    vert_indices: np.array,
-    horiz_indices: np.array,
-) -> tf.Tensor:
-    # Crop image to grid squares
-    v_start = vert_indices[0] - grid_square_length + 1
-    v_end = vert_indices[-1] + grid_square_length
-    h_start = horiz_indices[0] - grid_square_length + 1
-    h_end = horiz_indices[-1] + grid_square_length
-    return board_img[:, h_start:h_end, v_start:v_end, :]
+def filter_grid_indices(line_indices: np.array) -> np.array:
+    possible_indices = []
+    for i, index in enumerate(line_indices[1:-1], start=1):
+        # Convolution filters create two adjacent lines demarcating grid edges
+        if (
+            index - line_indices[i - 1] > 1
+            or line_indices[i + 1] - index < MIN_SQUARE_LENGTH
+        ):
+            continue
+        possible_indices.append(index)
+
+    grid_indices = filter_evenly_spaced_indices(possible_indices)
+
+    if grid_indices is None:
+        raise ValueError("Failed to detect grid lines in chessboard!")
+
+    return np.array(grid_indices)
 
 
-def get_cropped_board_image(input_path: str) -> Image:
+def filter_evenly_spaced_indices(possible_indices: List[int]) -> Optional[List[int]]:
+    """Finds a list of seven evenly-spaced indices from the input list, if any.
+    """
+    set_possible_indices = set(possible_indices)
+    for start in possible_indices[:-6]:
+        for end in list(reversed(possible_indices))[:-6]:
+            space_length = (end - start) // 6
+            # Must be space between edge of image and first index
+            if start < space_length:
+                continue
+            grid_indices = list(range(start, end + 1, space_length))
+            set_grid_indices = set(grid_indices)
+            if set_grid_indices.issubset(set_possible_indices):
+                return grid_indices
+
+    return None
+
+
+def get_cropped_board_image(input_path: str) -> tf.Tensor:
+    """Detect chessboard gridlines in the input image and crop to the board edges.
+    """
     input_img = Image.open(input_path)
     img = preprocess_image(input_img)
     # Identify gridline indices
-    vert_indices, horiz_indices = get_grid_indices(img)
+    vert_indices, horiz_indices = detect_grid_indices(img)
     # Determine length of grid square sides
-    grid_square_length = vert_indices[2] - vert_indices[0]
-    cropped_img = crop_board_image(img, grid_square_length, vert_indices, horiz_indices)
-    return Image.fromarray(cropped_img[0, :, :, 0].numpy())
+    square_length = vert_indices[1] - vert_indices[0]
+    # Crop image to grid squares
+    v_start = vert_indices[0] - square_length
+    v_end = vert_indices[-1] + square_length
+    h_start = horiz_indices[0] - square_length
+    h_end = horiz_indices[-1] + square_length
+    return img[:, h_start:h_end, v_start:v_end, :]
 
 
 if __name__ == "__main__":
