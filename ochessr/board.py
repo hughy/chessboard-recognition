@@ -59,7 +59,7 @@ def detect_grid_indices(img: tf.Tensor) -> Tuple[np.array, np.array]:
     # Get indices of vertical and horizontal edges
     v_mean = tf.math.reduce_mean(filtered_img, axis=0)
     h_mean = tf.math.reduce_mean(filtered_img, axis=1)
-    # Use 75% of maximum pixel value as threshold
+    # Use 80% of maximum pixel value as threshold
     v_indices = tf.where(v_mean > (255 / 1.25))
     h_indices = tf.where(h_mean > (255 / 1.25))
     # Convert to 1-D numpy arrays
