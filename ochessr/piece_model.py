@@ -12,7 +12,21 @@ TRAINING_EPOCHS = 16
 VALIDATION_SPLIT = 0.2
 
 
-CLASS_LABELS = ["_", "bB", "bK", "bN", "bP", "bQ", "bR", "wB", "wK", "wN", "wP", "wQ", "wR"]
+CLASS_LABELS = [
+    "_",
+    "bB",
+    "bK",
+    "bN",
+    "bP",
+    "bQ",
+    "bR",
+    "wB",
+    "wK",
+    "wN",
+    "wP",
+    "wQ",
+    "wR",
+]
 
 
 def get_piece_model() -> tf.keras.Model:
@@ -71,9 +85,7 @@ def train(model: tf.keras.Model, save_model: bool = True) -> tf.keras.Model:
     train_dataset = get_dataset("training")
     validation_dataset = get_dataset("validation")
 
-    model.fit(
-        train_dataset, validation_data=validation_dataset, epochs=TRAINING_EPOCHS
-    )
+    model.fit(train_dataset, validation_data=validation_dataset, epochs=TRAINING_EPOCHS)
 
     if save_model:
         model.save(MODEL_FILEPATH)

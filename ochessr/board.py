@@ -26,14 +26,14 @@ def crop_board_image(img: tf.Tensor) -> tf.Tensor:
     """Detect chessboard gridlines in the input image and crop to the board edges.
     """
     # Identify gridline indices
-    vert_indices, horiz_indices = _detect_grid_indices(img)
+    horiz_indices, vert_indices = _detect_grid_indices(img)
     # Determine length of grid square sides
-    square_length = vert_indices[1] - vert_indices[0]
+    square_length = horiz_indices[1] - horiz_indices[0]
     # Crop image to grid squares
-    v_start = vert_indices[0] - square_length
-    v_end = vert_indices[-1] + square_length
     h_start = horiz_indices[0] - square_length
     h_end = horiz_indices[-1] + square_length
+    v_start = vert_indices[0] - square_length
+    v_end = vert_indices[-1] + square_length
     return img[:, h_start:h_end, v_start:v_end, :]
 
 
@@ -76,10 +76,10 @@ def _detect_grid_indices(img: tf.Tensor) -> Tuple[np.array, np.array]:
     output_img = tf.squeeze(output_img, axis=0)
 
     # Get indices of vertical and horizontal edges
-    vert_lines = _filter_lines(output_img, axis=0)
     horiz_lines = _filter_lines(output_img, axis=1)
+    vert_lines = _filter_lines(output_img, axis=0)
 
-    return _filter_grid_indices(vert_lines), _filter_grid_indices(horiz_lines)
+    return _filter_grid_indices(horiz_lines), _filter_grid_indices(vert_lines)
 
 
 def _filter_lines(img: tf.Tensor, axis: int) -> np.array:
