@@ -8,6 +8,14 @@ import numpy as np
 import tensorflow as tf
 
 
+def get_cropped_board_image(input_path: str) -> tf.Tensor:
+    """Loads an image and crops it at the detected chessboard edges.
+    """
+    input_img = Image.open(input_path)
+    img = preprocess_image(input_img)
+    return crop_board_image(img)
+
+
 def preprocess_image(input_img: Image) -> tf.Tensor:
     """Preprocess the input image.
     """
@@ -35,14 +43,6 @@ def crop_board_image(img: tf.Tensor) -> tf.Tensor:
     v_start = vert_indices[0] - square_length
     v_end = vert_indices[-1] + square_length
     return img[:, h_start:h_end, v_start:v_end, :]
-
-
-def get_cropped_board_image(input_path: str) -> tf.Tensor:
-    """Loads an image and crops it at the detected chessboard edges.
-    """
-    input_img = Image.open(input_path)
-    img = preprocess_image(input_img)
-    return crop_board_image(img)
 
 
 def _get_board_filters() -> tf.Tensor:
