@@ -1,3 +1,5 @@
+import os
+
 import tensorflow as tf
 from tensorflow.keras import layers
 from tensorflow.keras import losses
@@ -29,7 +31,15 @@ CLASS_LABELS = [
 ]
 
 
-def get_piece_model() -> tf.keras.Model:
+def load_piece_model(model_filepath: str = MODEL_FILEPATH) -> tf.keras.Model:
+    """Loads a TensorFlow SavedModel from the given filepath.
+    """
+    if not os.path.exists(model_filepath):
+        raise RuntimeError(f"No TensorFlow SavedModel exists at {model_filepath}.")
+    return tf.keras.models.load_model(model_filepath)
+
+
+def create_model() -> tf.keras.Model:
     """Constructs a model for classifying chess piece images.
 
     The model architecture is based on the LeNet-5 model for classifying
@@ -52,7 +62,7 @@ def get_piece_model() -> tf.keras.Model:
     )
 
 
-def get_dataset(subset: str) -> tf.data.Dataset:
+def _get_dataset(subset: str) -> tf.data.Dataset:
     """Loads the dataset of chess piece images.
 
     The value of `subset` determines which of the training or validation
@@ -73,7 +83,7 @@ def get_dataset(subset: str) -> tf.data.Dataset:
     )
 
 
-def train(model: tf.keras.Model, save_model: bool = True) -> tf.keras.Model:
+def train(model: tf.keras.Model) -> tf.keras.Model:
     """Trains the classification model on the chess piece image dataset.
     """
     model.compile(
@@ -86,16 +96,13 @@ def train(model: tf.keras.Model, save_model: bool = True) -> tf.keras.Model:
     validation_dataset = get_dataset("validation")
 
     model.fit(train_dataset, validation_data=validation_dataset, epochs=TRAINING_EPOCHS)
-
-    if save_model:
-        model.save(MODEL_FILEPATH)
-
     return model
 
 
 def main():
-    model = get_piece_model()
+    model = create_model()
     model = train(model)
+    model.save(MODEL_FILEPATH)
 
 
 if __name__ == "__main__":
