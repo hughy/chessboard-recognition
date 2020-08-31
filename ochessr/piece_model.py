@@ -14,24 +14,24 @@ TRAINING_EPOCHS = 16
 VALIDATION_SPLIT = 0.2
 
 
-CLASS_LABELS = [
+CLASS_LABEL_LIST = [
     "_",
-    "bB",
-    "bK",
-    "bN",
-    "bP",
-    "bQ",
-    "bR",
-    "wB",
-    "wK",
-    "wN",
-    "wP",
-    "wQ",
-    "wR",
+    "b",  # "bB",
+    "k",  # "bK",
+    "n",  # "bN",
+    "p",  # "bP",
+    "q",  # "bQ",
+    "r",  # "bR",
+    "B",  # "wB",
+    "K",  # "wK",
+    "N",  # "wN",
+    "P",  # "wP",
+    "Q",  # "wQ",
+    "R",  # "wR",
 ]
 
 
-def load_piece_model(model_filepath: str = MODEL_FILEPATH) -> tf.keras.Model:
+def load_model(model_filepath: str = MODEL_FILEPATH) -> tf.keras.Model:
     """Loads a TensorFlow SavedModel from the given filepath.
     """
     if not os.path.exists(model_filepath):
@@ -57,7 +57,7 @@ def create_model() -> tf.keras.Model:
             layers.Conv2D(64, (3, 3), activation="tanh"),
             layers.Flatten(),
             layers.Dense(64, activation="tanh"),
-            layers.Dense(len(CLASS_LABELS)),
+            layers.Dense(len(CLASS_LABEL_LIST)),
         ]
     )
 
@@ -92,8 +92,8 @@ def train(model: tf.keras.Model) -> tf.keras.Model:
         metrics=["accuracy"],
     )
 
-    train_dataset = get_dataset("training")
-    validation_dataset = get_dataset("validation")
+    train_dataset = _get_dataset("training")
+    validation_dataset = _get_dataset("validation")
 
     model.fit(train_dataset, validation_data=validation_dataset, epochs=TRAINING_EPOCHS)
     return model
