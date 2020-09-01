@@ -5,6 +5,25 @@ from ochessr import board
 from ochessr import piece_model
 
 
+class ChessBoardLayer(tf.keras.layers.Layer):
+    def call(self, input):
+        return board.crop_board_image(input)
+
+
+class ChessPieceLayer(tf.keras.layers.Layer):
+    def __init__(self, model, *args, **kwargs):
+        super().__init__()
+        self.model = model
+
+    def call(self, input):
+        return predict_board_labels(self.model, input)
+
+
+class FENLayer(tf.keras.layers.Layer):
+    def call(self, input):
+        return board_to_fen(input)
+
+
 def predict_board_labels(model: tf.keras.Model, img: tf.Tensor) -> tf.Tensor:
     # Resize image for piece_model input
     img = tf.image.resize(img, (32 * 8, 32 * 8))
@@ -48,6 +67,18 @@ def board_to_fen(board_labels: tf.Tensor) -> str:
         row_strings.append(row_string)
 
     return "/".join(row_strings)
+
+
+def ochessr_model(input_path):
+    model = tf.keras.models.Sequential([
+        ChessBoardLayer(),
+        ChessPieceLayer(piece_model.load_model()),
+        FENLayer(),
+    ])
+    img = board.preprocess_image(Image.open(input_path))
+    fen = model(img)
+    model.save("model/ochess_model")
+    print(fen)
 
 
 def main(input_path: str):
