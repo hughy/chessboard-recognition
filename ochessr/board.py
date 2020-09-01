@@ -1,6 +1,4 @@
 from copy import deepcopy
-from typing import List
-from typing import Optional
 from typing import Tuple
 
 from PIL import Image
@@ -82,31 +80,29 @@ def _detect_grid_indices(img: tf.Tensor) -> Tuple[np.array, np.array]:
     return _filter_grid_indices(horiz_lines), _filter_grid_indices(vert_lines)
 
 
-def _filter_lines(img: tf.Tensor, axis: int) -> np.array:
+def _filter_lines(img: tf.Tensor, axis: int) -> tf.Tensor:
     """Finds indices of straight lines detected in the image.
     """
     axis_mean = tf.math.reduce_mean(img, axis=axis)
     # Use 80% of maximum pixel value as threshold
     line_indices = tf.where(axis_mean > (255 / 1.25))
     # Convert to 1-D numpy array
-    return tf.squeeze(line_indices, axis=-1).numpy()
+    return tf.squeeze(line_indices, axis=-1)
 
 
-def _filter_grid_indices(line_indices: np.array) -> np.array:
+def _filter_grid_indices(line_indices: tf.Tensor) -> np.array:
     """Finds the indices corresponding to grid lines on the chessboard.
     """
-    possible_indices = []
-    for i, index in enumerate(line_indices[1:-1], start=1):
-        # Convolution filters create two adjacent lines demarcating grid edges
-        if index - line_indices[i - 1] > 1:
-            continue
-        possible_indices.append(index)
+    # Convolution filters create two adjacent lines demarcating grid edges.
+    # Use latter index.
+    pairs = tf.stack([line_indices[:-1], line_indices[1:]], axis=-1)
+    pair_diffs = tf.map_fn(lambda pair: pair[1] - pair[0], pairs)
+    possible_indices = tf.boolean_mask(line_indices[1:], pair_diffs > 1)
 
-    grid_indices = _filter_evenly_spaced_indices(possible_indices)
-    return np.array(grid_indices)
+    return _filter_evenly_spaced_indices(possible_indices.numpy())
 
 
-def _filter_evenly_spaced_indices(possible_indices: List[int]) -> Optional[List[int]]:
+def _filter_evenly_spaced_indices(possible_indices: np.array) -> np.array:
     """Finds a list of seven evenly-spaced indices from the input list, if any.
     """
     set_possible_indices = set(possible_indices)
@@ -116,6 +112,6 @@ def _filter_evenly_spaced_indices(possible_indices: List[int]) -> Optional[List[
             grid_indices = list(range(start, end + 1, space_length))
             set_grid_indices = set(grid_indices)
             if set_grid_indices.issubset(set_possible_indices):
-                return grid_indices
+                return np.array(grid_indices)
 
     raise ValueError("Failed to detect grid lines in chessboard!")
