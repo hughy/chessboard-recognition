@@ -77,7 +77,6 @@ def ochessr_model(input_path):
     ])
     img = board.preprocess_image(Image.open(input_path))
     fen = model(img)
-    model.save("model/ochess_model")
     print(fen)
 
 
