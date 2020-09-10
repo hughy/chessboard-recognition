@@ -76,15 +76,15 @@ The approach that I use for detecting the chessboard in an image works well on i
 
 The algorithm that I use to identify grid lines in the chessboard may perform better by using something akin to non-max suppression to identify lines in the filtered image output from convolution. Using additional convolutions and processing might also help to distinguish grid lines from the rest of the image.
 
-Future work would focus on improving chessboard detection, but I'm also interested in refactoring the `ochessr` script into a sequential TensorFlow model. I experimented with this during development in hopes of saving the processing pipeline as a SavedModel artifact compatible with TensorFlow Serving, but hit obstacles in refactoring parts of the `board` module into TensorFlow operations. The module currently depends on eager operations to identify grid lines which seems to inhibit the construction of the computational graph necessary to construct the SavedModel.
+Future work would focus on improving chessboard detection, but I'm also interested in refactoring the `recognition` script into a sequential TensorFlow model. I experimented with this during development in hopes of saving the processing pipeline as a SavedModel artifact compatible with TensorFlow Serving, but hit obstacles in refactoring parts of the `board` module into TensorFlow operations. The module currently depends on eager operations to identify grid lines which seems to inhibit the construction of the computational graph necessary to construct the SavedModel.
 
 FEN strings include information on castling and en passant rules as well as which side's turn it is. It is difficult to deduce this information from only an image of the board, and this project doesn't even attempt it. The project omits any information beyond piece positioning from the output FEN string.
 
 ## Usage
 
-To try this yourself, first install project dependencies from `requirements.txt` then run the `ochessr.py` script as shown below:
+To try this yourself, first install project dependencies from `requirements.txt` then run the `recognition.py` script as shown below:
 
-    python -m ochessr.ochessr --image-path <IMAGE_FILEPATH>
+    python -m chessboard_recognition.recognition --image-path <IMAGE_FILEPATH>
 
 ## References
 

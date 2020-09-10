@@ -5,7 +5,7 @@ from typing import List
 from PIL import Image
 import tensorflow as tf
 
-from ochessr.board import get_cropped_board_image
+from chessboard_recognition.board import get_cropped_board_image
 
 
 BOARD_PATH_FMT = "data/boards/board{i}.png"

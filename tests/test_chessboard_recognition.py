@@ -1,4 +1,4 @@
-from ochessr import __version__
+from chessboard_recognition import __version__
 
 
 def test_version():
