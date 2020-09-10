@@ -1,3 +1,4 @@
+import argparse
 from PIL import Image
 import tensorflow as tf
 
@@ -70,11 +71,9 @@ def board_to_fen(board_labels: tf.Tensor) -> str:
 
 
 def ochessr_model(input_path):
-    model = tf.keras.models.Sequential([
-        ChessBoardLayer(),
-        ChessPieceLayer(piece_model.load_model()),
-        FENLayer(),
-    ])
+    model = tf.keras.models.Sequential(
+        [ChessBoardLayer(), ChessPieceLayer(piece_model.load_model()), FENLayer(),]
+    )
     img = board.preprocess_image(Image.open(input_path))
     fen = model(img)
     print(fen)
@@ -96,4 +95,9 @@ def main(input_path: str):
 
 
 if __name__ == "__main__":
-    main("img/board0.png")
+    parser = argparse.ArgumentParser(
+        description="Recognize a chessboard image and generate a FEN string."
+    )
+    parser.add_argument("--image-path", type=str, help="Filepath for the input image.")
+    args = parser.parse_args()
+    main(args.image_path)
