@@ -84,7 +84,7 @@ FEN strings include information on castling and en passant rules as well as whic
 
 To try this yourself, first install project dependencies from `requirements.txt` then run the `recognition.py` script as shown below:
 
-    python -m chessboard_recognition.recognition --image-path <IMAGE_FILEPATH>
+    python -m chessboard_recognition.recognition <IMAGE_FILEPATH>
 
 ## References
 
